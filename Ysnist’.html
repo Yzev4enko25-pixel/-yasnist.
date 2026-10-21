@@ -284,20 +284,41 @@ function upd(){bar.classList.toggle('hide',hide.hero||hide.form)}
 new IntersectionObserver(function(es){hide.hero=es[0].isIntersecting;upd()},{threshold:.5}).observe(document.querySelector('.hero'));
 new IntersectionObserver(function(es){hide.form=es[0].isIntersecting;upd()},{threshold:.3}).observe(document.getElementById('form'));
 upd();
-// Form: TODO connect to Telegram (see notes) — now it only shows a thank-you message
-document.getElementById('lead').addEventListener('submit',function(ev){
+// Lead form → Make webhook. No Telegram credentials are stored in the public page.
+document.getElementById('lead').addEventListener('submit', function(ev) {
   ev.preventDefault();
-  var f=ev.target,phone=f.phone.value.replace(/[^\d+]/g,'');
-  var err=document.getElementById('err');
-  if(phone.replace(/\D/g,'').length<9){err.style.display='block';return}
-  err.style.display='none';
-  var TOKEN='8893201926:AAF0ea5gZwNaqRxeiMWNlj0mdvrtS_1caf4',CHAT='624914284';
-  var text='Нова заявка з сайту YASNIST’\nІм’я: '+(f.name.value||'—')+'\nТелефон (Telegram): '+phone;
-  var btn=f.querySelector('button');btn.disabled=true;
-  fetch('https://api.telegram.org/bot'+TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:CHAT,text:text})})
-    .then(function(r){return r.json()})
-    .then(function(j){if(!j.ok)throw 0;f.style.display='none';document.getElementById('ok').style.display='block'})
-    .catch(function(){btn.disabled=false;err.textContent='Не вдалося надіслати. Спробуйте ще раз.';err.style.display='block'});
+  var f = ev.currentTarget;
+  var nameInput = f.elements.namedItem('name');
+  var phoneInput = f.elements.namedItem('phone');
+  var name = nameInput ? nameInput.value.trim() : '';
+  var phone = phoneInput ? phoneInput.value.trim() : '';
+  var err = document.getElementById('err');
+  if (phone.replace(/\D/g, '').length < 9) {
+    err.textContent = 'Вкажіть, будь ласка, коректний номер телефону.';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  var btn = f.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  var payload = new URLSearchParams();
+  payload.set('name', name || '—');
+  payload.set('phone', phone);
+  payload.set('utm_source', 'website');
+  fetch('https://hook.eu1.make.com/opesxklvpy47jwl7whiqn2vol6ixm1uq', {
+    method: 'POST',
+    mode: 'no-cors',
+    body: payload,
+    keepalive: true
+  }).then(function() {
+    // An opaque no-cors response cannot confirm delivery; verify in Make/Telegram.
+    f.style.display = 'none';
+    document.getElementById('ok').style.display = 'block';
+  }).catch(function() {
+    btn.disabled = false;
+    err.textContent = 'Не вдалося надіслати. Спробуйте ще раз.';
+    err.style.display = 'block';
+  });
 });
 </script>
 </body>
